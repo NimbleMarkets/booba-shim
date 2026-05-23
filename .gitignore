@@ -1,0 +1,5 @@
+.task/
+.DS_Store
+bin/
+*.wasm
+node_modules/

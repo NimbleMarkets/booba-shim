@@ -1,0 +1,45 @@
+# booba-shim - Copyright (c) 2026 Neomantra Corp
+
+version: '3'
+
+tasks:
+  default:
+    deps: [test, build-wasm]
+  list:
+    cmds: [task --list-all]
+
+  go-tidy:
+    run: once
+    cmds: [go mod tidy]
+
+  test:
+    desc: 'Host-platform tests (stubs, helpers)'
+    cmds: [go test ./...]
+
+  build-wasm:
+    desc: 'Compile every package under GOOS=js GOARCH=wasm — guards against build regressions'
+    cmds:
+      - GOOS=js GOARCH=wasm go build ./...
+
+  build-tool:
+    desc: 'Build the asset tool binary'
+    cmds:
+      - go build -o bin/booba-shim-assets ./cmd/booba-shim-assets
+
+  examples:
+    desc: 'Build wasm for every example'
+    cmds:
+      - task: examples-duckdb-sql
+      - task: examples-duckdb-arrow
+
+  examples-duckdb-sql:
+    dir: examples/duckdb-sql
+    cmds:
+      - GOOS=js GOARCH=wasm go build -o app.wasm .
+      - go tool booba-shim-assets . --shim=duckdb
+
+  examples-duckdb-arrow:
+    dir: examples/duckdb-arrow
+    cmds:
+      - GOOS=js GOARCH=wasm go build -o app.wasm .
+      - go tool booba-shim-assets . --shim=duckdb

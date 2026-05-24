@@ -12,6 +12,7 @@ pre { background: #f3f3f3; padding: 8px; border-radius: 4px; }
 <body>
 <h1>booba-shim/duckdb — database/sql tour</h1>
 <div id="out">loading…<br/></div>
+<script src="wasm_exec.js"></script>
 <script type="module">
   import './booba-shim/duckdb/duckdb-shim.js';
   await window.boobaShim.duckdb.ready;
@@ -19,6 +20,5 @@ pre { background: #f3f3f3; padding: 8px; border-radius: 4px; }
   const wasm = await WebAssembly.instantiateStreaming(fetch('app.wasm'), go.importObject);
   go.run(wasm.instance);
 </script>
-<script src="wasm_exec.js"></script>
 </body>
 </html>

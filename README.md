@@ -67,13 +67,13 @@ func main() {
 
 ```html
 <div id="output"></div>
+<script src="wasm_exec.js"></script>
 <script type="module">
   import './booba-shim/duckdb/duckdb-shim.js';
   await window.boobaShim.duckdb.ready;
   const wasm = await WebAssembly.instantiateStreaming(fetch('app.wasm'), new Go().importObject);
   new Go().run(wasm.instance);
 </script>
-<script src="wasm_exec.js"></script>
 ```
 
 **Taskfile.yml** (excerpt):

@@ -74,6 +74,7 @@ Every method blocks the calling goroutine on a JS Promise. This is safe inside `
 
 ## Known limitations (v0.1.0)
 
+- **Only one file-path connection per page session.** The bridge hardcodes the ATTACH alias `dank`, so opening a second `sql.Open("duckdb", "other.duckdb?...")` in the same page session fails with a catalog error. `:memory:` connections are unaffected. Per-handle aliases are a v0.2 task.
 - `rowsAffected` is always 0; DuckDB-Wasm does not expose row-count data.
 - No transactions.
 - No streaming `send()` path; all results are fully materialized via `query()` before returning.

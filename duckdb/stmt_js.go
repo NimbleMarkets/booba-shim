@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
-	"io"
 )
 
 type jsStmt struct {
@@ -74,6 +73,3 @@ func namedFromValues(args []driver.Value) []driver.NamedValue {
 	}
 	return out
 }
-
-// Suppress unused-import warning for io until row code lands.
-var _ = io.EOF

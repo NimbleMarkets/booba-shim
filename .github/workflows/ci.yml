@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Host-platform tests
+        run: go test ./...
+      - name: GOOS=js GOARCH=wasm build
+        run: GOOS=js GOARCH=wasm go build ./...
+      - name: Examples build
+        run: |
+          cd examples/duckdb-sql   && GOOS=js GOARCH=wasm go build -o app.wasm .
+          cd ../duckdb-arrow       && GOOS=js GOARCH=wasm go build -o app.wasm .

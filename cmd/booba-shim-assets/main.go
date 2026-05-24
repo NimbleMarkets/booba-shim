@@ -69,11 +69,36 @@ func installShim(shim, webDir string, vendored bool) error {
 			if rel == "." {
 				return nil
 			}
+			// In --cdn mode, skip creating the vendored/ subdirectory.
+			if !vendored && rel == "vendored" {
+				return fs.SkipDir
+			}
 			return os.MkdirAll(filepath.Join(dstRoot, rel), 0o755)
 		}
-		// In --cdn mode skip files under a "vendored/" subdirectory.
+		// In --cdn mode, skip files under a "vendored/" subdirectory.
 		if !vendored && strings.HasPrefix(rel, "vendored"+string(filepath.Separator)) {
 			return nil
+		}
+		// Bridge-file swap:
+		//   --cdn:      write duckdb-shim.js as-is; skip duckdb-shim-vendored.js.
+		//   --vendored: skip duckdb-shim.js (CDN bridge); write duckdb-shim-vendored.js
+		//               AS duckdb-shim.js so consumer HTML needs no changes.
+		if rel == "duckdb-shim.js" && vendored {
+			return nil // skip CDN bridge in vendored mode
+		}
+		if rel == "duckdb-shim-vendored.js" {
+			if !vendored {
+				return nil // skip vendored bridge in CDN mode
+			}
+			// Write vendored bridge AS duckdb-shim.js so consumer HTML
+			// doesn't need to change its <script> src.
+			data, err := fs.ReadFile(shimAssets, p)
+			if err != nil {
+				return err
+			}
+			out := filepath.Join(dstRoot, "duckdb-shim.js")
+			fmt.Printf("write %s (vendored)\n", out)
+			return os.WriteFile(out, data, 0o644)
 		}
 		data, err := fs.ReadFile(shimAssets, p)
 		if err != nil {

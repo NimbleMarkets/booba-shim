@@ -1,0 +1,15 @@
+version: '3'
+tasks:
+  build:
+    cmds:
+      - GOOS=js GOARCH=wasm go build -o app.wasm .
+      - cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" .
+      - go tool booba-shim-assets . --shim=duckdb
+  serve:
+    deps: [build]
+    cmds:
+      - echo 'Open http://localhost:8000/'
+      - python3 -m http.server 8000
+  clean:
+    cmds:
+      - rm -rf booba-shim app.wasm wasm_exec.js

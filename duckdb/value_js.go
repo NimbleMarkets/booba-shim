@@ -15,9 +15,8 @@ import (
 // marshalArgs converts a slice of database/sql NamedValues into a JS Array
 // of values suitable for DuckDB-Wasm's prepared-statement params.
 //
-// Type coverage matches what dank-bubbler's loader queries against
-// duckdb-go/v2 on the host side: nil, bool, int64, float64, string,
-// []byte, time.Time.
+// Type coverage: nil, bool, signed/unsigned ints (int through int64,
+// uint through uint64), float32/64, string, []byte, time.Time.
 func marshalArgs(args []driver.NamedValue) (js.Value, error) {
 	arr := js.Global().Get("Array").New(len(args))
 	for i, a := range args {
@@ -40,6 +39,27 @@ func marshalValue(v driver.Value) (js.Value, error) {
 		return js.ValueOf(x), nil
 	case float64:
 		return js.ValueOf(x), nil
+	case int:
+		return js.ValueOf(int64(x)), nil
+	case int8:
+		return js.ValueOf(int64(x)), nil
+	case int16:
+		return js.ValueOf(int64(x)), nil
+	case int32:
+		return js.ValueOf(int64(x)), nil
+	case uint:
+		return js.ValueOf(int64(x)), nil
+	case uint8:
+		return js.ValueOf(int64(x)), nil
+	case uint16:
+		return js.ValueOf(int64(x)), nil
+	case uint32:
+		return js.ValueOf(int64(x)), nil
+	case uint64:
+		// May truncate for values > MaxInt64; acceptable for v0.1.
+		return js.ValueOf(int64(x)), nil
+	case float32:
+		return js.ValueOf(float64(x)), nil
 	case string:
 		return js.ValueOf(x), nil
 	case []byte:

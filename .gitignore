@@ -2,4 +2,5 @@
 .DS_Store
 bin/
 *.wasm
+!cmd/booba-shim-assets/assets/**/*.wasm
 node_modules/

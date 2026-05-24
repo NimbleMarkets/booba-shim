@@ -34,7 +34,7 @@ window.boobaShim.duckdb = {
             'See web/duckdb/duckdb-shim-vendored.js for details.'
         );
     },
-    close: async () => {},
+    close: async () => { throw new Error('booba-shim/duckdb: vendored mode is a v0.1.0 stub. Use --cdn.'); },
     query: async () => {
         throw new Error('booba-shim/duckdb: vendored mode stub — use --cdn');
     },

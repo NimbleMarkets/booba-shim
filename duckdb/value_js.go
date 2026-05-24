@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"syscall/js"
 	"time"
+
+	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/array"
 )
 
 // marshalArgs converts a slice of database/sql NamedValues into a JS Array
@@ -48,5 +51,59 @@ func marshalValue(v driver.Value) (js.Value, error) {
 		return js.ValueOf(x.UTC().Format(time.RFC3339Nano)), nil
 	default:
 		return js.Value{}, fmt.Errorf("unsupported arg type %T", v)
+	}
+}
+
+// decodeColumn reads one row from an Arrow column and returns the
+// corresponding driver.Value. v0.1 covers the types dank-bubbler's queries
+// produce: int/float numerics, bool, string, binary, date, timestamp.
+//
+// Unsupported Arrow types return an error rather than zero-value; we want
+// integration failures to be loud, not silent.
+func decodeColumn(col arrow.Array, row int) (driver.Value, error) {
+	if col.IsNull(row) {
+		return nil, nil
+	}
+	switch a := col.(type) {
+	case *array.Boolean:
+		return a.Value(row), nil
+	case *array.Int8:
+		return int64(a.Value(row)), nil
+	case *array.Int16:
+		return int64(a.Value(row)), nil
+	case *array.Int32:
+		return int64(a.Value(row)), nil
+	case *array.Int64:
+		return a.Value(row), nil
+	case *array.Uint8:
+		return int64(a.Value(row)), nil
+	case *array.Uint16:
+		return int64(a.Value(row)), nil
+	case *array.Uint32:
+		return int64(a.Value(row)), nil
+	case *array.Uint64:
+		// May truncate for values > MaxInt64; acceptable for v0.1.
+		return int64(a.Value(row)), nil
+	case *array.Float32:
+		return float64(a.Value(row)), nil
+	case *array.Float64:
+		return a.Value(row), nil
+	case *array.String:
+		return a.Value(row), nil
+	case *array.LargeString:
+		return a.Value(row), nil
+	case *array.Binary:
+		return append([]byte(nil), a.Value(row)...), nil
+	case *array.LargeBinary:
+		return append([]byte(nil), a.Value(row)...), nil
+	case *array.Date32:
+		return a.Value(row).ToTime(), nil
+	case *array.Date64:
+		return a.Value(row).ToTime(), nil
+	case *array.Timestamp:
+		dt := a.DataType().(*arrow.TimestampType)
+		return a.Value(row).ToTime(dt.Unit), nil
+	default:
+		return nil, fmt.Errorf("unsupported arrow type %s", col.DataType())
 	}
 }

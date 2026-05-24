@@ -6,7 +6,7 @@
 // driver:
 //
 //	import _ "github.com/NimbleMarkets/booba-shim/duckdb"
-//	db, err := sql.Open("duckdb", "dank-data.duckdb?access_mode=read_only")
+//	db, err := sql.Open("duckdb", "my-data.duckdb?access_mode=read_only")
 //
 // On any other GOOS, every public entry point returns ErrNonJSPlatform so
 // host-side test binaries can import the package without panicking.

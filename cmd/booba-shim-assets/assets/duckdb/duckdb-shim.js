@@ -44,9 +44,9 @@ async function open(dsn) {
     const conn = await db.connect();
     if (path && path !== ':memory:') {
         const readOnly = opts.access_mode === 'read_only';
-        const sql = `ATTACH '${path.replace(/'/g, "''")}' AS dank${readOnly ? ' (READ_ONLY)' : ''}`;
+        const sql = `ATTACH '${path.replace(/'/g, "''")}' AS attached${readOnly ? ' (READ_ONLY)' : ''}`;
         await conn.query(sql);
-        await conn.query('USE dank');
+        await conn.query('USE attached');
     }
     const handle = nextHandle++;
     connections.set(handle, conn);

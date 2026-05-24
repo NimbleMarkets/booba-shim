@@ -75,8 +75,8 @@ func marshalValue(v driver.Value) (js.Value, error) {
 }
 
 // decodeColumn reads one row from an Arrow column and returns the
-// corresponding driver.Value. v0.1 covers the types dank-bubbler's queries
-// produce: int/float numerics, bool, string, binary, date, timestamp.
+// corresponding driver.Value. v0.1 covers the common scalar types: int/float
+// numerics, bool, string, binary, date, timestamp.
 //
 // Unsupported Arrow types return an error rather than zero-value; we want
 // integration failures to be loud, not silent.

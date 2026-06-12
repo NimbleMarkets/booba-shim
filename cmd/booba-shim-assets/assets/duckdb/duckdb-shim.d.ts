@@ -2,9 +2,13 @@
 
 declare global {
     interface Window {
-        boobaShim?: {
-            duckdb?: BoobaShimDuckDB;
-        };
+        boobaShim?: BoobaShim;
+    }
+
+    /** Declaration-merged across every booba-shim bridge type file —
+     *  each shim contributes its own optional member. */
+    interface BoobaShim {
+        duckdb?: BoobaShimDuckDB;
     }
 }
 

@@ -31,6 +31,7 @@ tasks:
     cmds:
       - task: examples-duckdb-sql
       - task: examples-duckdb-arrow
+      - task: examples-pdfium-render
 
   examples-duckdb-sql:
     dir: examples/duckdb-sql
@@ -43,3 +44,9 @@ tasks:
     cmds:
       - GOOS=js GOARCH=wasm go build -o app.wasm .
       - go tool booba-shim-assets . --shim=duckdb
+
+  examples-pdfium-render:
+    dir: examples/pdfium-render
+    cmds:
+      - GOOS=js GOARCH=wasm go build -o app.wasm .
+      - go tool booba-shim-assets . --shim=pdfium

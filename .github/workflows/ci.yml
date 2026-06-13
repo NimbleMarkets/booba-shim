@@ -21,3 +21,4 @@ jobs:
         run: |
           cd examples/duckdb-sql   && GOOS=js GOARCH=wasm go build -o app.wasm .
           cd ../duckdb-arrow       && GOOS=js GOARCH=wasm go build -o app.wasm .
+          cd ../pdfium-render      && GOOS=js GOARCH=wasm go build -o app.wasm .

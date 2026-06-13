@@ -32,7 +32,9 @@ await boobaShim.duckdb.registerFileBuffer('data.csv', bytes);
 **From Go (inside a WASM module):**
 
 ```go
-syscall.js.Global().Get("boobaShim").Get("duckdb").Call("registerFileURL", "my-file.db", "/path/to/file.db");
+import "syscall/js"
+
+js.Global().Get("boobaShim").Get("duckdb").Call("registerFileURL", "my-file.db", "/path/to/file.db")
 ```
 
 Then open the connection:
@@ -80,3 +82,4 @@ Every method blocks the calling goroutine on a JS Promise. This is safe inside `
 - No streaming `send()` path; all results are fully materialized via `query()` before returning.
 - `context.Context` is accepted but cancellation is not implemented.
 - `--vendored` asset-tool mode is a stub; use `--cdn` for production.
+- `uint64`/`UBIGINT` values above `math.MaxInt64` return an error rather than wrapping silently (`driver.Value` cannot carry `uint64`); lossless large-`UBIGINT` support is a v0.2 task.

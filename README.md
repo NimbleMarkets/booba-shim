@@ -72,8 +72,9 @@ func main() {
 <script type="module">
   import './booba-shim/duckdb/duckdb-shim.js';
   await window.boobaShim.duckdb.ready;
-  const wasm = await WebAssembly.instantiateStreaming(fetch('app.wasm'), new Go().importObject);
-  new Go().run(wasm.instance);
+  const go = new Go();
+  const wasm = await WebAssembly.instantiateStreaming(fetch('app.wasm'), go.importObject);
+  go.run(wasm.instance);
 </script>
 ```
 

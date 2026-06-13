@@ -45,8 +45,16 @@ async function open(dsn) {
     if (path && path !== ':memory:') {
         const readOnly = opts.access_mode === 'read_only';
         const sql = `ATTACH '${path.replace(/'/g, "''")}' AS attached${readOnly ? ' (READ_ONLY)' : ''}`;
-        await conn.query(sql);
-        await conn.query('USE attached');
+        try {
+            await conn.query(sql);
+            await conn.query('USE attached');
+        } catch (err) {
+            // ATTACH/USE failed — close the orphaned connection before
+            // rethrowing so it isn't leaked in DuckDB-Wasm (it was never
+            // stored in `connections`, so closeDocument can't reach it).
+            await conn.close();
+            throw err;
+        }
     }
     const handle = nextHandle++;
     connections.set(handle, conn);

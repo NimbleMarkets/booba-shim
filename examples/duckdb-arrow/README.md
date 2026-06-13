@@ -5,4 +5,4 @@ task serve
 ```
 
 then open <http://localhost:8000/>. Five rows of `n` and `n^2` from a
-streaming `ipc.Reader`.
+DuckDB Arrow IPC reader.

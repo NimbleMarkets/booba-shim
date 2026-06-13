@@ -1,6 +1,6 @@
 # booba-shim
 
-Browser shims that let Go-WASM TUIs hosted by [go-booba](https://github.com/NimbleMarkets/go-booba) access browser-only capabilities. Currently DuckDB-Wasm; more shims planned.
+Browser shims that let Go-WASM TUIs hosted by [go-booba](https://github.com/NimbleMarkets/go-booba) access browser-only capabilities. Current shims cover DuckDB-Wasm and PDFium-Wasm.
 
 ## Shims
 
@@ -19,7 +19,7 @@ require github.com/NimbleMarkets/booba-shim v0.1.0
 tool github.com/NimbleMarkets/booba-shim/cmd/booba-shim-assets
 ```
 
-Then `go mod download` and `go tool booba-shim-assets` to populate your HTML directory.
+Then `go mod download` and `go tool booba-shim-assets <web-dir> --shim=duckdb` (or `--shim=pdfium`) to populate your HTML directory.
 
 ## Quickstart — minimal browser SQL demo
 
@@ -92,10 +92,10 @@ tasks:
 ## Asset tool
 
 ```sh
-go tool booba-shim-assets <web-dir> --shim=duckdb [--cdn|--vendored]
+go tool booba-shim-assets <web-dir> --shim=<name> [--shim=<name> ...] [--cdn|--vendored]
 ```
 
-Writes `<web-dir>/booba-shim/duckdb/duckdb-shim.js` plus dependencies. Use `--cdn` (default) to fetch from CDN; `--vendored` embeds local bundles (see below).
+Writes each selected shim under `<web-dir>/booba-shim/<shim>/`. Use `--cdn` (default) to load upstream browser dependencies from CDN. DuckDB also has a `--vendored` mode that embeds local bundles (see below).
 
 ### Vendored mode
 

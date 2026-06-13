@@ -49,8 +49,9 @@ db, _ := sql.Open("duckdb", "my-file.db")
 
 - `nil` → NULL
 - `bool` → BOOLEAN
-- `int64` → BIGINT
-- `float64` → DOUBLE
+- signed integers (`int`, `int8`, `int16`, `int32`, `int64`) → BIGINT
+- unsigned integers (`uint`, `uint8`, `uint16`, `uint32`, `uint64`) up to `math.MaxInt64` → BIGINT
+- `float32`, `float64` → DOUBLE
 - `string` → VARCHAR
 - `[]byte` → BLOB
 - `time.Time` → TIMESTAMP (ISO-8601 format, UTC)

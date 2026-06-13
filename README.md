@@ -7,6 +7,7 @@ Browser shims that let Go-WASM TUIs hosted by [go-booba](https://github.com/Nimb
 | Subpackage | What it does |
 |---|---|
 | [`booba-shim/duckdb`](./duckdb) | DuckDB-Wasm via `database/sql` driver + native Arrow API |
+| [`booba-shim/pdfium`](./pdfium) | PDF rasterization to `*image.RGBA` via PDFium-Wasm |
 
 ## Install
 
@@ -101,10 +102,9 @@ Writes `<web-dir>/booba-shim/duckdb/duckdb-shim.js` plus dependencies. Use `--cd
 
 ### Pinned upstream versions
 
-- `@duckdb/duckdb-wasm@1.29.0`
-- `apache-arrow@17.0.0`
-
-Version bumps are tracked in `web/duckdb/duckdb-shim.js`.
+- `@duckdb/duckdb-wasm@1.29.0` (duckdb shim; tracked in `web/duckdb/duckdb-shim.js`)
+- `apache-arrow@17.0.0` (duckdb shim)
+- `@embedpdf/pdfium@2.14.2` (pdfium shim; tracked in `web/pdfium/pdfium-shim.js`)
 
 ## License
 

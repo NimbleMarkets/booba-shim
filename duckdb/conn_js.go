@@ -14,14 +14,19 @@ type jsConn struct {
 	open   bool
 }
 
-// Close releases the JS-side connection.
+// Close releases the JS-side connection. The Go side is marked closed
+// only after the JS close promise resolves: the bridge removes its
+// handle entry after conn.close() resolves, so a rejected close leaves
+// the connection open on both sides and the caller can retry.
 func (c *jsConn) Close() error {
 	if !c.open {
 		return nil
 	}
+	if _, err := awaitPromise(bridge().Call("close", c.handle)); err != nil {
+		return err
+	}
 	c.open = false
-	_, err := awaitPromise(bridge().Call("close", c.handle))
-	return err
+	return nil
 }
 
 // Prepare returns a Stmt. We don't round-trip to the bridge here;

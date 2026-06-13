@@ -5,6 +5,7 @@ package duckdb
 import (
 	"database/sql/driver"
 	"fmt"
+	"math"
 	"syscall/js"
 	"time"
 
@@ -56,7 +57,12 @@ func marshalValue(v driver.Value) (js.Value, error) {
 	case uint32:
 		return js.ValueOf(int64(x)), nil
 	case uint64:
-		// May truncate for values > MaxInt64; acceptable for v0.1.
+		// driver.Value cannot carry uint64, and values above MaxInt64
+		// would wrap to a negative int64. Fail loudly rather than
+		// silently corrupt; lossless large-UBIGINT args are a v0.2 task.
+		if x > math.MaxInt64 {
+			return js.Value{}, fmt.Errorf("uint64 value %d exceeds max int64; not representable losslessly", x)
+		}
 		return js.ValueOf(int64(x)), nil
 	case float32:
 		return js.ValueOf(float64(x)), nil
@@ -102,8 +108,14 @@ func decodeColumn(col arrow.Array, row int) (driver.Value, error) {
 	case *array.Uint32:
 		return int64(a.Value(row)), nil
 	case *array.Uint64:
-		// May truncate for values > MaxInt64; acceptable for v0.1.
-		return int64(a.Value(row)), nil
+		// driver.Value cannot carry uint64, and values above MaxInt64
+		// would wrap to a negative int64. Fail loudly rather than
+		// silently corrupt the value.
+		v := a.Value(row)
+		if v > math.MaxInt64 {
+			return nil, fmt.Errorf("UBIGINT value %d exceeds max int64; not representable as driver.Value", v)
+		}
+		return int64(v), nil
 	case *array.Float32:
 		return float64(a.Value(row)), nil
 	case *array.Float64:

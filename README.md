@@ -1,6 +1,6 @@
 # booba-shim
 
-Browser shims that let Go-WASM TUIs hosted by [go-booba](https://github.com/NimbleMarkets/go-booba) access browser-only capabilities. Current shims cover DuckDB-Wasm and PDFium-Wasm.
+Browser shims that let Go-WASM TUIs hosted by [go-booba](https://github.com/NimbleMarkets/go-booba) access browser-only capabilities. Current shims cover DuckDB-Wasm, PDFium-Wasm, and flint-chart.
 
 ## Shims
 
@@ -8,6 +8,7 @@ Browser shims that let Go-WASM TUIs hosted by [go-booba](https://github.com/Nimb
 |---|---|
 | [`booba-shim/duckdb`](./duckdb) | DuckDB-Wasm via `database/sql` driver + native Arrow API |
 | [`booba-shim/pdfium`](./pdfium) | PDF rasterization to `*image.RGBA` via PDFium-Wasm |
+| [`booba-shim/flintchart`](./flintchart) | Compile a flint `ChartAssemblyInput` into an ntcharts render envelope via a vendored flint-chart bundle |
 
 ## Install
 
@@ -106,6 +107,7 @@ Writes each selected shim under `<web-dir>/booba-shim/<shim>/`. Use `--cdn` (def
 - `@duckdb/duckdb-wasm@1.32.0` (duckdb shim; tracked in `web/duckdb/duckdb-shim.js`)
 - `apache-arrow@17.0.0` (duckdb shim)
 - `@embedpdf/pdfium@2.15.1` (pdfium shim; tracked in `web/pdfium/pdfium-shim.js`)
+- `flint-chart@0.5.1` (flintchart shim; vendored, not CDN-fetched — tracked in `web/flintchart/PROVENANCE.txt`)
 
 ## License
 

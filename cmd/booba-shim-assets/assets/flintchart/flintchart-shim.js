@@ -5641,7 +5641,12 @@ var ntBarChartDef = {
     const result = detectBandedAxisFromSemantics(cs, table, { preferAxis: "x" });
     return {
       axisFlags: result ? { [result.axis]: { banded: true } } : { x: { banded: true } },
-      resolvedTypes: result?.resolvedTypes
+      resolvedTypes: result?.resolvedTypes,
+      // The ntcharts bar model spends two cells per category — the bar and
+      // the gap after it — and draws nothing at all once the bar width
+      // reaches zero. A 2-cell step makes flint budget, and truncate with its
+      // usual overflow warning, to what the renderer can actually draw.
+      paramOverrides: { minStep: 2 }
     };
   },
   instantiate: (_spec, rawCtx) => {
@@ -5939,6 +5944,281 @@ var ntSparklineDef = {
   }
 };
 
+// src/ntcharts/ecdf.ts
+function ecdf(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    if (i + 1 < n && sorted[i + 1] === sorted[i]) continue;
+    out.push({ x: sorted[i], y: (i + 1) / n });
+  }
+  return out;
+}
+
+// src/ntcharts/templates/ecdf.ts
+var ntEcdfPlotDef = {
+  chart: "ECDF Plot",
+  template: { mark: "line" },
+  channels: ["x", "color", "detail"],
+  markCognitiveChannel: "position",
+  instantiate: (_spec, rawCtx) => {
+    const ctx = rawCtx;
+    const { emit, channelSemantics: cs, table } = ctx;
+    const measure = cs.x?.field;
+    if (!measure) return;
+    const grouping = { ...cs, group: cs.group ?? cs.detail };
+    emit.type = "line";
+    emit.x_axis = { ...emit.x_axis, type: "value", title: measure };
+    emit.y_axis = { ...emit.y_axis, title: "Cumulative proportion", min: 0, max: 1, format: { kind: "percent", precision: 0 } };
+    if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
+    let dropped = 0;
+    const raw = splitSeries(table, grouping, (row) => ({ x: Number(row[measure]), y: 0 }));
+    emit.data.series = raw.map((s) => {
+      const xs = (s.values ?? []).map((p) => p.x);
+      const kept = xs.filter((x) => Number.isFinite(x));
+      dropped += xs.length - kept.length;
+      return { ...s, name: s.name === "value" ? measure : s.name, values: ecdf(kept) };
+    });
+    if (dropped > 0) {
+      ctx.warn({
+        severity: "warning",
+        code: "invalid-value",
+        message: `dropped ${dropped} value(s) of ${measure} that are not numbers`
+      });
+    }
+    if (emit.data.series.length > 1) emit.options = { ...emit.options, show_legend: true };
+  },
+  encodingActions: [],
+  pivot: makeCartesianPivot({ permute: [["color", "detail"]], shift: ["color", "detail"] })
+};
+
+// src/ntcharts/templates/connected-scatter.ts
+var ntConnectedScatterDef = {
+  chart: "Connected Scatter Plot",
+  template: { mark: "line" },
+  channels: ["x", "y", "order", "color", "detail"],
+  markCognitiveChannel: "position",
+  instantiate: (_spec, rawCtx) => {
+    const ctx = rawCtx;
+    const { emit, channelSemantics: cs, table } = ctx;
+    emit.type = "line";
+    emit.x_axis = { ...emit.x_axis, type: "value", title: cs.x?.field };
+    emit.y_axis = { ...emit.y_axis, title: cs.y?.field };
+    if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
+    if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
+    if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    else pinFittedYDomain(emit, cs, table);
+    let rows = table;
+    const orderField = cs.order?.field;
+    if (orderField != null) {
+      const key = (r) => cs.order.type === "temporal" ? toMs(r[orderField]) : Number(r[orderField]);
+      const numeric = table.every((r) => Number.isFinite(key(r)));
+      rows = [...table].sort(
+        (a, b) => numeric ? key(a) - key(b) : String(a[orderField]).localeCompare(String(b[orderField]))
+      );
+    }
+    const grouping = { ...cs, group: cs.group ?? cs.detail };
+    emit.data.series = splitSeries(rows, grouping, (row) => ({
+      x: Number(row[cs.x.field]),
+      y: Number(row[cs.y.field])
+    }));
+    if (emit.data.series.length > 1) emit.options = { ...emit.options, show_legend: true };
+  },
+  encodingActions: [],
+  pivot: makeCartesianPivot({ transpose: [["x", "y"]], permute: [["x", "y", "color"]], shift: ["color", "detail"] })
+};
+
+// src/ntcharts/templates/bubble.ts
+var ntBubbleChartDef = {
+  ...ntScatterPlotDef,
+  chart: "Bubble Chart",
+  channels: ["x", "y", "size", "color", "opacity"],
+  instantiate: (spec, rawCtx) => {
+    ntScatterPlotDef.instantiate(spec, rawCtx);
+    const ctx = rawCtx;
+    const size = ctx.channelSemantics.size?.field;
+    if (size != null) {
+      ctx.warn({
+        severity: "info",
+        code: "chart-type-approximated",
+        message: `drawn as a scatter plot: the size channel (${size}) is not shown`
+      });
+    }
+  }
+};
+
+// src/ntcharts/bins.ts
+function binValues(values, n) {
+  if (values.length === 0) return { edges: [], counts: [] };
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  if (min === max) return { edges: [min, min + 1], counts: [values.length] };
+  const bins = Math.max(1, Math.floor(n));
+  const width = (max - min) / bins;
+  const edges = Array.from({ length: bins + 1 }, (_, i) => i === bins ? max : min + i * width);
+  const counts = new Array(bins).fill(0);
+  for (const v of values) counts[Math.min(bins - 1, Math.floor((v - min) / width))]++;
+  return { edges, counts };
+}
+
+// src/ntcharts/templates/histogram.ts
+var DEFAULT_BINS = 10;
+var AXIS_CELLS = 8;
+var num = (v) => String(Number(v.toPrecision(3)));
+var ntHistogramDef = {
+  chart: "Histogram",
+  template: { mark: "bar" },
+  channels: ["x", "color"],
+  markCognitiveChannel: "length",
+  instantiate: (_spec, rawCtx) => {
+    const ctx = rawCtx;
+    const { emit, channelSemantics: cs, table } = ctx;
+    const measure = cs.x?.field;
+    if (!measure) return;
+    const groupField = cs.color?.type === "quantitative" ? void 0 : cs.color?.field;
+    let dropped = 0;
+    const rows = table.map((r) => ({ v: Number(r[measure]), g: groupField != null ? String(r[groupField]) : "" })).filter((r) => {
+      const ok = Number.isFinite(r.v);
+      if (!ok) dropped++;
+      return ok;
+    });
+    if (dropped > 0) {
+      ctx.warn({ severity: "warning", code: "invalid-value", message: `dropped ${dropped} value(s) of ${measure} that are not numbers` });
+    }
+    const requested = Number(ctx.chartProperties?.binCount) > 0 ? Number(ctx.chartProperties.binCount) : DEFAULT_BINS;
+    const capacity = Math.max(1, Math.floor((ctx.canvasSize.width - AXIS_CELLS + 1) / 2));
+    const bins = binValues(rows.map((r) => r.v), Math.min(requested, capacity));
+    if (requested > capacity && bins.counts.length > 0) {
+      ctx.warn({ severity: "info", code: "overflow", message: `using ${bins.counts.length} bins instead of ${requested}: that is all the width fits` });
+    }
+    const labels = bins.counts.map((_, i) => `${num(bins.edges[i])}\u2013${num(bins.edges[i + 1])}`);
+    emit.type = "bar";
+    emit.x_axis = { ...emit.x_axis, type: "category", labels, title: measure };
+    emit.y_axis = { ...emit.y_axis, title: "Count", min: 0 };
+    const groups = [];
+    for (const r of rows) if (!groups.includes(r.g)) groups.push(r.g);
+    const palette = paletteForScheme(cs.color?.colorScheme?.scheme);
+    emit.data.series = groups.map((g, gi) => {
+      const mine = rows.filter((r) => r.g === g).map((r) => r.v);
+      const counts = new Array(bins.counts.length).fill(0);
+      for (const v of mine) {
+        let i = bins.edges.findIndex((e, k) => k < counts.length && v < bins.edges[k + 1]);
+        if (i < 0) i = counts.length - 1;
+        counts[i]++;
+      }
+      return {
+        name: groupField != null ? g : measure,
+        values: counts.map((y) => ({ y })),
+        ...groupField != null ? { color: palette[gi % palette.length] } : {}
+      };
+    });
+    if (groups.length > 1) emit.options = { ...emit.options, stacked: true, show_legend: true };
+  },
+  encodingActions: [],
+  pivot: makeCartesianPivot({ permute: [["x", "color"]], shift: ["color"] })
+};
+
+// src/ntcharts/templates/area.ts
+var ntAreaChartDef = {
+  ...ntLineChartDef,
+  chart: "Area Chart",
+  template: { mark: "area" },
+  channels: ["x", "y", "color", "opacity"],
+  instantiate: (spec, rawCtx) => {
+    ntLineChartDef.instantiate(spec, rawCtx);
+    rawCtx.warn({
+      severity: "info",
+      code: "chart-type-approximated",
+      message: "drawn as a line chart: the area fill is not shown"
+    });
+  }
+};
+
+// src/ntcharts/templates/lollipop.ts
+var ntLollipopChartDef = {
+  ...ntBarChartDef,
+  chart: "Lollipop Chart",
+  channels: ["x", "y", "color"],
+  instantiate: (spec, rawCtx) => {
+    ntBarChartDef.instantiate(spec, rawCtx);
+    rawCtx.warn({
+      severity: "info",
+      code: "chart-type-approximated",
+      message: "drawn as a bar chart: the lollipop stems and dots are not shown"
+    });
+  }
+};
+
+// src/ntcharts/calendar.ts
+var DAY = 864e5;
+var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+var dayStart = (t) => Math.floor(t / DAY) * DAY;
+var weekday = (day) => ((Math.floor(day / DAY) + 3) % 7 + 7) % 7;
+function calendarGrid(points) {
+  if (points.length === 0) return { weeks: 0, cells: [], labels: [] };
+  const byDay = /* @__PURE__ */ new Map();
+  for (const p of points) {
+    const d = dayStart(p.t);
+    byDay.set(d, (byDay.get(d) ?? 0) + p.v);
+  }
+  const days = [...byDay.keys()].sort((a, b) => a - b);
+  const first = days[0] - weekday(days[0]) * DAY;
+  const weeks = Math.floor((days[days.length - 1] - first) / (7 * DAY)) + 1;
+  const cells = days.map((d) => ({
+    x: Math.floor((d - first) / (7 * DAY)),
+    y: weekday(d),
+    z: byDay.get(d)
+  }));
+  const labels = Array.from({ length: weeks }, (_, w) => {
+    const start = first + w * 7 * DAY;
+    for (let d = 0; d < 7; d++) {
+      const date = new Date(start + d * DAY);
+      if (date.getUTCDate() === 1) return MONTHS[date.getUTCMonth()];
+    }
+    return w === 0 ? MONTHS[new Date(days[0]).getUTCMonth()] : "";
+  });
+  return { weeks, cells, labels };
+}
+
+// src/ntcharts/templates/calendar-heatmap.ts
+var ntCalendarHeatmapDef = {
+  chart: "Calendar Heatmap",
+  template: { mark: "rect" },
+  channels: ["x", "color"],
+  markCognitiveChannel: "color",
+  declareLayoutMode: () => ({ axisFlags: { x: { banded: true }, y: { banded: true } } }),
+  instantiate: (_spec, rawCtx) => {
+    const ctx = rawCtx;
+    const { emit, channelSemantics: cs, table } = ctx;
+    const dateField = cs.x?.field;
+    if (!dateField) return;
+    const valueField = cs.color?.field;
+    let dropped = 0;
+    const points = [];
+    for (const row of table) {
+      const t = toMs(row[dateField]);
+      const v = valueField != null ? Number(row[valueField]) : 1;
+      if (Number.isNaN(t) || Number.isNaN(v)) {
+        dropped++;
+        continue;
+      }
+      points.push({ t, v });
+    }
+    if (dropped > 0) {
+      ctx.warn({ severity: "warning", code: "invalid-temporal-x", message: `dropped ${dropped} row(s) with an unparsable date or value` });
+    }
+    const grid = calendarGrid(points);
+    emit.type = "heatmap";
+    emit.heat = { cells: grid.cells };
+    emit.data.series = [];
+    emit.x_axis = { ...emit.x_axis, type: "category", labels: grid.labels, title: dateField };
+    emit.y_axis = { ...emit.y_axis, labels: WEEKDAYS };
+    emit.theme = { ...emit.theme, gradient: gradientForScheme(cs.color?.colorScheme?.scheme) };
+  }
+};
+
 // src/ntcharts/templates/index.ts
 var defs = [];
 function ntGetTemplateDef(chart) {
@@ -5957,6 +6237,13 @@ ntRegister(ntScatterPlotDef);
 ntRegister(ntHeatmapDef);
 ntRegister(ntCandlestickChartDef);
 ntRegister(ntSparklineDef);
+ntRegister(ntEcdfPlotDef);
+ntRegister(ntConnectedScatterDef);
+ntRegister(ntBubbleChartDef);
+ntRegister(ntHistogramDef);
+ntRegister(ntAreaChartDef);
+ntRegister(ntLollipopChartDef);
+ntRegister(ntCalendarHeatmapDef);
 
 // src/ntcharts/shims.ts
 var DEFAULT_TERMINAL_BASE = { width: 64, height: 20 };
@@ -6076,7 +6363,14 @@ function d3TimeToGoLayout(d3fmt, warn) {
 }
 
 // src/ntcharts/assemble.ts
-var TERMINAL_OPTIONS = { minStep: 1, defaultBandSize: 3, stepPadding: 0.2, maxStretch: 1 };
+var TERMINAL_OPTIONS = {
+  minStep: 1,
+  defaultBandSize: 3,
+  stepPadding: 0.2,
+  maxStretch: 1,
+  minSubplotSize: 4
+};
+var OVERRIDE_DOMAIN_PAD = 0.05;
 function assembleNtcharts(input) {
   const warnings = [];
   const warn = (w) => warnings.push(w);
@@ -6117,6 +6411,7 @@ function assembleNtcharts(input) {
       cs.zero = computeZeroDecision(cs.semanticAnnotation.semanticType, axis, markType, nums);
     }
   }
+  applyAxisProperties(template, channelSemantics, input.chart_spec.chartProperties, warn);
   const declaration = template.declareLayoutMode?.(channelSemantics, data, input.chart_spec.chartProperties) ?? {};
   const options = { ...TERMINAL_OPTIONS, ...declaration.paramOverrides, ...caps };
   const budgets = computeChannelBudgets(channelSemantics, declaration, convertedData, baseSize, options);
@@ -6128,8 +6423,8 @@ function assembleNtcharts(input) {
   const emit = {
     type: "bar",
     // template overwrites
-    width: Math.max(8, Math.round(layout.subplotWidth)),
-    height: Math.max(4, Math.round(layout.subplotHeight)),
+    width: Math.max(8, Math.round(layout.subplotWidth), baseSize.width),
+    height: Math.max(4, Math.round(layout.subplotHeight), baseSize.height),
     data: { series: [] }
   };
   if (input.chart_spec.title) emit.title = input.chart_spec.title;
@@ -6148,11 +6443,79 @@ function assembleNtcharts(input) {
     ntFormatY
   };
   template.instantiate(emit, ctx);
+  applyLogScale(emit, input.chart_spec.chartProperties, channelSemantics, warn);
   const result = { ...emit };
   if (warnings.length) result._warnings = warnings;
   result._width = emit.width;
   result._height = emit.height;
   return result;
+}
+function applyAxisProperties(template, channelSemantics, chartProperties, warn) {
+  if (!chartProperties) return;
+  const positional = template.markCognitiveChannel === "position";
+  for (const axis of ["x", "y"]) {
+    const cs = channelSemantics[axis];
+    const zeroChoice = chartProperties[`includeZero_${axis}`];
+    if (zeroChoice === true || zeroChoice === false) {
+      if (axis === "y" && positional && cs?.type === "quantitative" && cs.zero) {
+        cs.zero = {
+          ...cs.zero,
+          zero: zeroChoice,
+          domainPadFraction: zeroChoice ? cs.zero.domainPadFraction : cs.zero.domainPadFraction || OVERRIDE_DOMAIN_PAD
+        };
+      } else {
+        warn({
+          severity: "info",
+          code: "chart-property-unsupported",
+          message: `includeZero_${axis} has no effect on a terminal ${template.chart}` + (axis === "x" ? ": the X axis range always follows the data." : ": its value axis always starts at zero."),
+          channel: axis,
+          field: cs?.field
+        });
+      }
+    }
+  }
+}
+function applyLogScale(emit, chartProperties, channelSemantics, warn) {
+  if (!chartProperties) return;
+  for (const axis of ["x", "y"]) {
+    if (chartProperties[`logScale_${axis}`] !== true) continue;
+    const reason = logScaleBlocker(emit, axis);
+    if (reason) {
+      warn({
+        severity: "warning",
+        code: "log-scale-unsupported",
+        message: `logScale_${axis} was requested but ${reason}; drawn on a linear scale.`,
+        channel: axis,
+        field: channelSemantics[axis]?.field
+      });
+      continue;
+    }
+    const target = axis === "x" ? emit.x_axis ?? (emit.x_axis = {}) : emit.y_axis ?? (emit.y_axis = {});
+    target.scale = "log";
+    if (axis === "y" && emit.y_axis) {
+      delete emit.y_axis.min;
+      delete emit.y_axis.max;
+    }
+  }
+}
+function logScaleBlocker(emit, axis) {
+  const drawsLogY = ["line", "scatter", "timeseries", "ohlc"];
+  const drawsLogX = ["line", "scatter"];
+  if (!(axis === "y" ? drawsLogY : drawsLogX).includes(emit.type)) {
+    if (axis === "x" && drawsLogY.includes(emit.type)) return "its X axis is time";
+    return `a terminal ${emit.type} chart cannot draw a logarithmic axis`;
+  }
+  const values = [];
+  for (const series of emit.data.series) {
+    for (const p of series.values ?? []) values.push(axis === "y" ? p.y : p.x);
+    for (const p of series.ohlc ?? []) {
+      if (axis === "y") values.push(p.o, p.h, p.l, p.c);
+    }
+  }
+  if (values.some((v) => !(v > 0) || !Number.isFinite(v))) {
+    return "the data has zero or negative values (flint would use a symlog scale, which terminal charts do not have)";
+  }
+  return void 0;
 }
 function axisFormat(cs, warn) {
   if (!cs) return void 0;

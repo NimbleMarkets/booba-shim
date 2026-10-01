@@ -2,6 +2,14 @@
 
 All notable changes to booba-shim are documented in this file.
 
+## Unreleased
+
+ * Update the vendored flint-ntcharts compiler to
+   [v0.2.0](https://github.com/NimbleMarkets/flint-ntcharts/releases/tag/v0.2.0):
+   new chart types (ECDF, connected scatter, bubble, histogram, area, lollipop,
+   calendar heatmap), logarithmic axes, and charts that fill the size they are
+   asked for. The compiled spec needs ntcharts v2.6.0 to render.
+
 ## `v0.2.0` - 2026-09-30
 
  * Added [`booba-shim/flintchart`](./flintchart): compile a flint

@@ -1,8 +1,8 @@
 source: https://github.com/NimbleMarkets/flint-ntcharts
-tag: v0.1.0
-commit: 772d35a9998f094f6fb82fc9a4d9d2ef1f8a26cb
+tag: v0.2.0
+commit: 4147bc37aefd3fa5374d1a961ca370455eff0d7c
 entry: js/src/entry-browser.ts
 build: make browser-shim (esbuild 0.28.1) in a clean clone of the tag
 flint-chart: 0.5.1
-sha256: bf2a4e3eee01d7bbc6a49bfa34b3cdc5d4bb0a3c6fb5f2681220d85d46aea6bc
-bytes: 219372
+sha256: 84b901b0918a0318335f2d057dbc268b04aa00e7e35591ddbdb968e97c433e06
+bytes: 233449

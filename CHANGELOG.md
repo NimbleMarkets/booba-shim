@@ -2,6 +2,14 @@
 
 All notable changes to booba-shim are documented in this file.
 
+## Unreleased
+
+ * Update DuckDB-Wasm from `1.29.0` to stable `1.32.0`, including the
+   embedded workers and WASM artifacts. Keep Apache Arrow JS at `17.0.0`.
+ * Update EmbedPDF PDFium from `2.14.2` to `2.15.1`, with matching JS and
+   WASM CDN pins. Verified both upgrades in Chrome using the Go/WASM SQL,
+   Arrow IPC, and PDF rendering examples; no bridge API changes required.
+
 ## `v0.1.0` - 2026-06-13
 
  * Initial release of `booba-shim`

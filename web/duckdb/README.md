@@ -8,5 +8,5 @@ The bridge sets `window.boobaShim.duckdb` and a `ready` promise. The page
 must await that promise before instantiating `app.wasm`.
 
 Pinned dependencies (bump in `duckdb-shim.js`):
-- `@duckdb/duckdb-wasm@1.29.0`
+- `@duckdb/duckdb-wasm@1.32.0`
 - `apache-arrow@17.0.0`

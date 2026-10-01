@@ -5,7 +5,7 @@
 // IPC out of DuckDB-Wasm's native arrow.Table results and ships bytes
 // across the JS↔Go boundary.
 
-import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/+esm';
+import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/+esm';
 import { tableToIPC } from 'https://cdn.jsdelivr.net/npm/apache-arrow@17.0.0/+esm';
 
 const NAMESPACE = (window.boobaShim = window.boobaShim || {});

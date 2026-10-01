@@ -6,7 +6,7 @@
 //
 // Ref: https://www.embedpdf.com/docs/pdfium
 
-import { init as initPDFium } from 'https://cdn.jsdelivr.net/npm/@embedpdf/pdfium@2.14.2/+esm';
+import { init as initPDFium } from 'https://cdn.jsdelivr.net/npm/@embedpdf/pdfium@2.15.1/+esm';
 
 const NAMESPACE = (window.boobaShim = window.boobaShim || {});
 
@@ -28,7 +28,7 @@ async function bootstrap() {
     wrapped = await initPDFium({
         locateFile: (path) => {
             if (path.endsWith('.wasm')) {
-                return 'https://cdn.jsdelivr.net/npm/@embedpdf/pdfium@2.14.2/dist/pdfium.wasm';
+                return 'https://cdn.jsdelivr.net/npm/@embedpdf/pdfium@2.15.1/dist/pdfium.wasm';
             }
             return path;
         }

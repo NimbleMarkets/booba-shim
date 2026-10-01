@@ -103,9 +103,9 @@ Writes each selected shim under `<web-dir>/booba-shim/<shim>/`. Use `--cdn` (def
 
 ### Pinned upstream versions
 
-- `@duckdb/duckdb-wasm@1.29.0` (duckdb shim; tracked in `web/duckdb/duckdb-shim.js`)
+- `@duckdb/duckdb-wasm@1.32.0` (duckdb shim; tracked in `web/duckdb/duckdb-shim.js`)
 - `apache-arrow@17.0.0` (duckdb shim)
-- `@embedpdf/pdfium@2.14.2` (pdfium shim; tracked in `web/pdfium/pdfium-shim.js`)
+- `@embedpdf/pdfium@2.15.1` (pdfium shim; tracked in `web/pdfium/pdfium-shim.js`)
 
 ## License
 

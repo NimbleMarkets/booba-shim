@@ -9,7 +9,7 @@
 // https://cdn.jsdelivr.net/... URLs for the .wasm and worker files.
 // The JSDelivr +esm transform likewise references /npm/apache-arrow@17.0.0/+esm
 // as an absolute CDN path. There is no single-file fully-self-contained ESM
-// bundle available for duckdb-wasm@1.29.0 that works from local file paths
+// bundle available for duckdb-wasm@1.32.0 that works from local file paths
 // without an import map.
 //
 // A future task can resolve this by either:

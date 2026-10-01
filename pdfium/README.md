@@ -50,4 +50,4 @@ page does not need to await it (unlike booba-shim/duckdb).
 
 ## Pinned upstream version
 
-- `@embedpdf/pdfium@2.14.2` — bump in `web/pdfium/pdfium-shim.js`.
+- `@embedpdf/pdfium@2.15.1` — bump in `web/pdfium/pdfium-shim.js`.

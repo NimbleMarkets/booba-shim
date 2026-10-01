@@ -10,4 +10,4 @@ does not need to await it — the Go side awaits `ready` itself on the first
 before instantiating `app.wasm`).
 
 Pinned dependencies (bump in `pdfium-shim.js`):
-- `@embedpdf/pdfium@2.14.2`
+- `@embedpdf/pdfium@2.15.1`

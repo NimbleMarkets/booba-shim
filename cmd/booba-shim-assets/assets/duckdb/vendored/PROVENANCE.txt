@@ -1,0 +1,7 @@
+source: npm @duckdb/duckdb-wasm@1.32.0
+apache-arrow: 17.0.0 (unchanged)
+duckdb-browser.mjs: sha256 4f8c0bb3c23d1ec457a451cc27418597b9a40dd772cceacc436a2cb7b9a49c18
+duckdb-browser-mvp.worker.js: sha256 b0387027f174e2b60c2d5cfa31cecca9b89d8a9762346b6449a784cd1c4dde3c
+duckdb-browser-eh.worker.js: sha256 f8ab72b6b90b3ad83077d47426d4a99d5d9a4c7e07cba1a2be37d655adc7c1ab
+duckdb-mvp.wasm: sha256 45d72a81fba8e57693d890da837c7041310e385e75619a8559839b15388dfe97
+duckdb-eh.wasm: sha256 4c221bfa59c11f24dbd750e70c90b9252eca6eec5633936e6a2ec766e55fd879

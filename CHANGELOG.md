@@ -2,7 +2,7 @@
 
 All notable changes to booba-shim are documented in this file.
 
-## Unreleased
+## `v0.2.0` - 2026-09-30
 
  * Added [`booba-shim/flintchart`](./flintchart): compile a flint
    `ChartAssemblyInput` (JSON) into an ntcharts render envelope. The

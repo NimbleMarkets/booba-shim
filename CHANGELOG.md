@@ -2,7 +2,7 @@
 
 All notable changes to booba-shim are documented in this file.
 
-## Unreleased
+## `v0.4.0` - 2026-10-02
 
  * Update the vendored flint-ntcharts compiler to
    [v0.3.0](https://github.com/NimbleMarkets/flint-ntcharts/releases/tag/v0.3.0):

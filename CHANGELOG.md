@@ -2,6 +2,16 @@
 
 All notable changes to booba-shim are documented in this file.
 
+## Unreleased
+
+ * Update the vendored flint-ntcharts compiler to
+   [v0.3.0](https://github.com/NimbleMarkets/flint-ntcharts/releases/tag/v0.3.0):
+   an opt-in raster renderer. An input with `"renderer": "raster"` compiles to
+   flint's ECharts option (`{"echarts", ...}` in place of `{"spec", ...}`) for a
+   host to draw as an image; inputs without it compile exactly as before. The
+   bundle grows from 233 KB to 734 KB. Read results with flint-ntcharts's
+   `envelope.ParseResult`.
+
 ## `v0.3.0` - 2026-10-01
 
  * Update the vendored flint-ntcharts compiler to

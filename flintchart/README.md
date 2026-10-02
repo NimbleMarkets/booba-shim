@@ -14,7 +14,9 @@ out, err := flintchart.Compile(ctx, inputJSON)
 if err != nil { /* errors.Is(err, flintchart.ErrBridgeMissing) ⇒ no shim on page */ }
 // out is envelope JSON: {"spec",...} on success, {"error":{"message"}}
 // on a compile failure — the latter is data, not err. Parse it (e.g.
-// with flint-ntcharts's envelope.Parse) to distinguish the two.
+// with flint-ntcharts's envelope.ParseResult) to distinguish the two.
+// With "renderer": "raster" in the input, success is {"echarts",...}
+// (flint's ECharts option) instead of {"spec",...}.
 
 v, _ := flintchart.Version() // "flint-ntcharts flint-chart@0.5.1"
 ```

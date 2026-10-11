@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>booba-shim audio</title></head>
+<body>
+<script src="wasm_exec.js"></script>
+<script type="module">
+  const go = new Go();
+  const wasm = await WebAssembly.instantiateStreaming(fetch('app.wasm'), go.importObject);
+  go.run(wasm.instance);
+</script>
+</body>
+</html>

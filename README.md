@@ -1,6 +1,6 @@
 # booba-shim
 
-Browser shims that let Go-WASM TUIs hosted by [go-booba](https://github.com/NimbleMarkets/go-booba) access browser-only capabilities. Current shims cover DuckDB-Wasm, PDFium-Wasm, and flint-chart.
+Browser shims that let Go-WASM TUIs hosted by [go-booba](https://github.com/NimbleMarkets/go-booba) access browser-only capabilities. Current shims cover DuckDB-Wasm, PDFium-Wasm, flint-chart, and Web Audio.
 
 ## Shims
 
@@ -9,6 +9,7 @@ Browser shims that let Go-WASM TUIs hosted by [go-booba](https://github.com/Nimb
 | [`booba-shim/duckdb`](./duckdb) | DuckDB-Wasm via `database/sql` driver + native Arrow API |
 | [`booba-shim/pdfium`](./pdfium) | PDF rasterization to `*image.RGBA` via PDFium-Wasm |
 | [`booba-shim/flintchart`](./flintchart) | Compile a flint `ChartAssemblyInput` into an ntcharts render envelope via a vendored flint-chart bundle |
+| [`booba-shim/audio`](./audio) | Play mono/stereo int16 PCM through Web Audio, with resampling and backpressure |
 
 ## Install
 
@@ -96,7 +97,30 @@ tasks:
 go tool booba-shim-assets <web-dir> --shim=<name> [--shim=<name> ...] [--cdn|--vendored]
 ```
 
-Writes each selected shim under `<web-dir>/booba-shim/<shim>/`. Use `--cdn` (default) to load upstream browser dependencies from CDN. DuckDB also has a `--vendored` mode that embeds local bundles (see below).
+Writes each selected shim under `<web-dir>/booba-shim/<shim>/`. `--shim=audio` succeeds without writing anything: audio needs no page JavaScript. Use `--cdn` (default) to load upstream browser dependencies from CDN. DuckDB also has a `--vendored` mode that embeds local bundles (see below).
+
+## Audio
+
+[`audio.New(audio.Options{})`](./audio/README.md) creates a Go `js/wasm` PCM
+player with `SetSampleRate`, `Write`, `Enable`, and `Close`. It works on the
+standard Booba page without a JavaScript bridge. Missing Web Audio returns a
+constructor error so callers can choose a silent paced output. No worklet or
+upstream browser dependency is needed.
+
+Call `SetSampleRate(hz, channels)` (mono or stereo), then `Enable(true)` and
+write interleaved `[]int16` from a goroutine. A first click or key press unlocks
+sound under browser autoplay rules. The browser resamples to the output device.
+`Enable(false)` flushes the partial chunk, drains running sound, then suspends;
+`Enable(true)` resumes. `Close` drains running audio and releases resources.
+
+The defaults are 2048-frame chunks and a 300 ms lead, with configurable gain.
+Write blocks for backpressure so producers stay near real time. Producer
+progress counts frames queued, not frames heard, and runs up to the lead time
+ahead, plus any partial chunk still being collected. A larger lead reduces gaps
+but increases pause/skip latency. Hidden tabs can throttle Go timers to roughly
+once per second while the audio clock keeps running, so the default lead can
+produce background gaps. See the [tone demo](./examples/audio) for gesture
+unlock, pause/resume, and manual browser checks.
 
 ### Vendored mode
 

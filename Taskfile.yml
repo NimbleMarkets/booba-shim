@@ -33,6 +33,7 @@ tasks:
       - task: examples-duckdb-arrow
       - task: examples-pdfium-render
       - task: examples-flintchart-compile
+      - task: examples-audio
 
   examples-duckdb-sql:
     dir: examples/duckdb-sql
@@ -57,3 +58,9 @@ tasks:
     cmds:
       - GOOS=js GOARCH=wasm go build -o app.wasm .
       - go tool booba-shim-assets . --shim=flintchart
+
+  examples-audio:
+    dir: examples/audio
+    cmds:
+      - GOOS=js GOARCH=wasm go build -o app.wasm .
+      - go tool booba-shim-assets . --shim=audio

@@ -52,6 +52,10 @@ func main() {
 }
 
 func installShim(shim, webDir string, vendored bool) error {
+	// AudioBuffer scheduling is implemented entirely in Go/syscall/js.
+	if shim == "audio" {
+		return nil
+	}
 	srcRoot := filepath.Join("assets", shim)
 	if _, err := fs.Stat(shimAssets, srcRoot); err != nil {
 		return fmt.Errorf("unknown shim %q (no embedded assets under %s)", shim, srcRoot)

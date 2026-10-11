@@ -1,0 +1,11 @@
+version: '3'
+tasks:
+  build:
+    cmds:
+      - GOOS=js GOARCH=wasm go build -o app.wasm .
+      - cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" .
+      - go tool booba-shim-assets . --shim=audio
+  serve:
+    deps: [build]
+    cmds:
+      - python3 -m http.server 8000

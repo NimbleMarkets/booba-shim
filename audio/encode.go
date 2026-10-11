@@ -1,4 +1,3 @@
-// Package audio plays interleaved PCM through Web Audio on js/wasm.
 package audio
 
 import (

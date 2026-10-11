@@ -107,6 +107,11 @@ standard Booba page without a JavaScript bridge. Missing Web Audio returns a
 constructor error so callers can choose a silent paced output. No worklet or
 upstream browser dependency is needed.
 
+The `Player` interface is portable. Outside `js/wasm`, `audio.New` returns
+`audio.ErrUnsupported`; `audio.NewSilent()` supplies a paced silent player on
+any platform. Applications can also implement `Player` with their native audio
+backend. Fallback selection is explicit.
+
 Call `SetSampleRate(hz, channels)` (mono or stereo), then `Enable(true)` and
 write interleaved `[]int16` from a goroutine. A first click or key press unlocks
 sound under browser autoplay rules. The browser resamples to the output device.

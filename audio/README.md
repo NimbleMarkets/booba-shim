@@ -8,8 +8,7 @@ import "github.com/NimbleMarkets/booba-shim/audio"
 
 p, err := audio.New(audio.Options{})
 if err != nil {
-    // The caller can choose a silent, paced output instead.
-    return err
+    p = audio.NewSilent()
 }
 defer p.Close()
 if err := p.SetSampleRate(16000, 1); err != nil {
@@ -61,6 +60,24 @@ of uninterrupted background audio. Pause drains queued sound rather than cutting
 it off, so it also takes up to the queued duration. Use Enable(false) at end of
 stream or Close while running to preserve the tail.
 
-The API is browser-only; the PCM encoder and its tests run on the host. See the
-[example and manual checks](../examples/audio/README.md). No worklet is shipped;
-`--shim=audio` is an asset-tool no-op.
+The interface, options, and errors are available on every platform. Outside
+`js/wasm`, `New` returns `nil, ErrUnsupported`. In a browser without AudioContext,
+its error also matches `errors.Is(err, audio.ErrUnsupported)`. Construction never
+silently selects a fallback; the caller makes that choice, as above.
+
+`NewSilent()` returns a portable `Player` that discards PCM and blocks for its
+duration, keeping progress and animations in real time. It starts disabled and
+requires a positive sample rate and one or two channels. It accepts samples in
+small batches and drains the accepted batch on pause or close. A blocked Write
+returns its accepted sample count and ErrDisabled or ErrClosed when interrupted.
+After resume, retry only the unconsumed suffix. Pause time does not become a
+playback backlog, and sample rate changes apply to subsequent writes.
+
+The silent output has no configurable lead, gain, or chunk size. It accepts any
+positive source rate and paces complete frames using the wall clock; no audio
+device or browser is needed. Native desktop and hardware output can implement
+`Player` in the application; this package does not include those backends.
+
+Encoder, silent pacing, lifecycle, and unsupported-platform tests run on the host.
+See the [browser example and manual checks](../examples/audio/README.md). No
+worklet is shipped; `--shim=audio` is an asset-tool no-op.

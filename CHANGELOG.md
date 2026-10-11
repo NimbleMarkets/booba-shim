@@ -2,6 +2,22 @@
 
 All notable changes to booba-shim are documented in this file.
 
+## `v0.5.0` - 2026-10-11
+
+ * Add [`booba-shim/audio`](./audio) for mono/stereo int16 PCM playback through
+   Web Audio. Includes browser resampling, configurable chunk size, lead time
+   and gain, gesture unlock, backpressure, and draining pause/close.
+ * Expose a portable `Player` interface and `NewSilent()` paced output.
+   Non-browser `New` returns `ErrUnsupported`, allowing explicit fallback
+   without native audio dependencies.
+ * Accept `booba-shim-assets --shim=audio` without writing assets. The audio
+   shim needs no page JavaScript or external browser library.
+ * Add `examples/audio` with generated tones, gesture unlock, pause/resume,
+   source-format changes, and a manual browser checklist.
+ * Validation: host tests, audio race tests, and the full Go/WASM build pass.
+   Safari 27.0.1 UI checks cover the example and the standard Booba page.
+   Audible gaplessness and hidden-tab playback still need listening checks.
+
 ## `v0.4.0` - 2026-10-02
 
  * Update the vendored flint-ntcharts compiler to
